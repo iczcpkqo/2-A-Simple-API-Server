@@ -1,12 +1,15 @@
 var express = require('express');
 var router = express.Router();
 var multer = require('multer');
+
+/**
+ * Set path and file name
+ * @type {DiskStorage}
+ */
 var storage = multer.diskStorage(
     {
         destination: 'routes/uploads/',
         filename: function (req, file, cb) {
-            //req.body is empty...
-            //How could I get the new_file_name property sent from client here?
             cb(null, file.originalname + '-' + Date.now() + ".pdf");
         }
     }
@@ -20,15 +23,15 @@ router.get('/', function (req, res, next) {
     res.render('index', {title: 'Express'});
 });
 
+/**
+ * Upload file, it should be only real PDF
+ */
 router.post('/upload', upload.single('uploaded_file'), function (req, res, next) {
 
-    // console.log(req.file, req.body)
-    // console.log(req.file, req.body)
     console.log(req);
     console.log("=====");
     console.log(req.file);
     console.log("=====");
-    // console.log(req);
 
     try {
         if (!req.file) {
@@ -50,12 +53,18 @@ router.post('/upload', upload.single('uploaded_file'), function (req, res, next)
     }
 });
 
-//test
+/**
+ * test for merge, add the cover to a test pdf
+ */
 router.get('/merge', function (req, res, next) {
     // addCover('./uploads/testpage.pdf')
     addCover('testpage.pdf')
 });
 
+/**
+ * add the default cover to a file
+ * @param filename
+ */
 function addCover(filename) {
     const {PDFDocument} = require('pdf-lib')
     const mergePDF = async ({sourceFiles, outputFile}) => {
@@ -75,7 +84,6 @@ function addCover(filename) {
 
     const sourceFiles = [
         path.resolve(__dirname, './cover/cover.pdf'),
-        // path.resolve(__dirname, './uploads/testpage.pdf')
         path.resolve(__dirname, './uploads/' + filename)
     ]
 
@@ -86,19 +94,24 @@ function addCover(filename) {
             sourceFiles,
             outputFile: path.resolve(__dirname, './outfile/' + filename),
         })
-        // console.log(`test2耗时：${Date.now() - time}ms`)
         console.log(filename + ` ${Date.now()} added`);
     }
 
     mergePdf();
 }
 
+/**
+ * api for get all the files which has added a cover
+ */
 router.get('/getfiles', function (req, res, next) {
 
-    // let files = new Array();
-    // let files = getFiles('./outfile/');
     getFiles('./outfile/');
 
+    /**
+     * get files from dir
+     * @param dir
+     * @returns {string}
+     */
     function getFiles(dir) {
         let files = [];
         dir = path.resolve(__dirname, dir);
@@ -114,8 +127,6 @@ router.get('/getfiles', function (req, res, next) {
             res.send({files: files});
         } else if (stat.isFile()) {
             console.log('== path:', dir);
-            // console.log('== name:', dir.split('\\').pop());
-            // files.push(dir.split('\\').pop());
             return dir.split('\\').pop();
         }
     }
@@ -123,6 +134,9 @@ router.get('/getfiles', function (req, res, next) {
 });
 
 
+/**
+ * download a file by name
+ */
 router.get('/download/:name', function (req, res, next) {
 
     console.log("=== download ===");
