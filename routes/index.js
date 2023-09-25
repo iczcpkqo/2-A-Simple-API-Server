@@ -105,29 +105,56 @@ function addCover(filename) {
  */
 router.get('/getfiles', function (req, res, next) {
 
-    getFiles('./outfile/');
+    // let files = getFiles('./outfile/');
+    res.send({files: getFilesFromDir('./outfile/')});
+
+    function getFilesFromDir(dir){
+        console.log('Path is:' + dir);
+
+        let files = [];
+        dir = path.resolve(__dirname, dir);
+        const stat = fs.statSync(dir);
+
+        if(stat.isDirectory()) {
+            const dirs = fs.readdirSync(dir);
+            files = dirs.filter(val => {
+                return path.extname(val) === '.pdf';
+            });
+            return files;
+        // } else if(stat.isFile()){
+            // return [path.basename(dir)];
+        } else{
+            throw new Error(`Parameter is NOT a Directory: ${dir}`);
+        }
+    }
 
     /**
      * get files from dir
      * @param dir
-     * @returns {string}
+     * @returns
      */
     function getFiles(dir) {
+        console.log(`Passing dir: ${dir}`);
         let files = [];
         dir = path.resolve(__dirname, dir);
         const stat = fs.statSync(dir);
-        console.log(stat);
+
         if (stat.isDirectory()) {
             const dirs = fs.readdirSync(dir);
 
             dirs.forEach(value => {
-                files.push(getFiles(path.join(dir, value)));
-            })
+                let reFiles = getFiles(path.join(dir, value));
+                files.push(...Array.isArray(reFiles)?reFiles:[reFiles]);
+            });
+            console.log(`Get Files From: ${dir}`);
             console.log(files);
-            res.send({files: files});
-        } else if (stat.isFile()) {
-            console.log('== path:', dir);
-            return dir.split('\\').pop();
+            return files;
+        } else if(stat.isFile()){
+            // return dir.split('\\').pop();
+            return path.basename(dir);
+        }
+        else {
+            throw new Error(`Parameter is neither a directory nor a file: ${dir}`)
         }
     }
 
